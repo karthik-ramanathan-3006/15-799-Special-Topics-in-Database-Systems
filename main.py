@@ -50,6 +50,8 @@ EXCLUDE_COLLECTION = [
     "COMMIT",
 ]
 
+ALLOWED_QUERY_TYPES = ["INSERT", "UPDATE", "SELECT", "DELETE"]
+
 
 def row_as_str(row_array):
     return ", ".join(row_array)
@@ -69,6 +71,9 @@ def process_queries(ddl: DDL, query_frequency):
 
     for query in query_frequency:
         parsed_query = sql_metadata.Parser(query)
+
+        if not parsed_query or not parsed_query.columns_dict:
+            continue
 
         if not WHERE_CLAUSE in parsed_query.columns_dict:
             continue
@@ -122,17 +127,14 @@ def parse_sql_log(log_file):
             if query.strip() in EXCLUDE_COLLECTION:
                 continue
 
+            if query.split()[0] not in ALLOWED_QUERY_TYPES:
+                continue
+
+            # Ignore the query if it is a Postgres catalog query
+            if "pg_stat" in query or "pg_catalog" in query:
+                continue
+
             query_frequency[query] = query_frequency.get(query, 0) + 1
-
-            # logger.info(row_dict["message"][exec_index + 1 :])
-            # # Parse the node
-            # root = pglast.Node(pglast.parse_sql(row_dict["message"][exec_index + 1 :]))
-            # for node in root.traverse():
-            #     print(node)
-
-            # count += 1
-            # if count > max_rows:
-            #     break
 
     for key, value in query_frequency.items():
         query = sqlparse.format(key, strip_whitespace=True)

@@ -60,7 +60,7 @@ def task_run_workload():
     return {
         "actions": [
             f"mkdir -p {results_directory}",
-            f"cd {BASE_DODOS_DIRECTORY}; doit update_config --scalefactor=%(scalefactor)d --time=%(time)d --rate=%(rate)d --terminals=%(terminals)d",
+            f"cd {BASE_DODOS_DIRECTORY}; doit update_config --benchmark=%(benchmark)s --scalefactor=%(scalefactor)f --time=%(time)d --rate=%(rate)d --terminals=%(terminals)d",
             f'cd {BASE_DODOS_DIRECTORY}; doit update_log_collection --log_directory="{run_directory}"',
             # Hack to restart Postgres
             lambda: local[f"{POSTGRES_PATH}/pg_ctl"][
@@ -69,10 +69,8 @@ def task_run_workload():
             f"until {POSTGRES_PATH}/pg_isready ; do sleep 1 ; done",
             # Initialize the benchmark
             # f'cd {BASE_DODOS_DIRECTORY}; doit benchbase_workload_create --benchmark="%(benchmark)s" --directory="{results_directory}"',
-            # CmdAction(invoke_create_index),
+            f"cd {BASE_DODOS_DIRECTORY}; doit perform_vacuum;"
             f'cd {BASE_DODOS_DIRECTORY}; doit benchbase_run --benchmark="%(benchmark)s" --args="--execute=true" --directory="{results_directory}"',
-            # CmdAction(invoke_drop_index),
-            # Hack to restart Postgres
             CmdAction(
                 invoke_store_results,
             ),
@@ -88,7 +86,7 @@ def task_run_workload():
                 "name": "scalefactor",
                 "long": "scalefactor",
                 "type": float,
-                "default": 1,
+                "default": 1.0,
             },
             {
                 "name": "time",

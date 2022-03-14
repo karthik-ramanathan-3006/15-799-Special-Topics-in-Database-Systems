@@ -1,4 +1,3 @@
-import csv
 from glob import glob
 import json
 import logging
@@ -7,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from pprint import pprint
 from typing import List
-from constants import DATA_STORE, MACHINE
+from constants import MACHINE, RESULTS_DIRECTORY
 from ddl import Index
 
 logging.basicConfig()
@@ -26,8 +25,11 @@ class BenchbaseRun:
     terminals: int = 1
 
 
-def writeout_results(data):
-    with open(DATA_STORE, "a") as results_file:
+def writeout_results(data, data_file="results.json"):
+    benchmark = data["benchmark"]
+    script_file = RESULTS_DIRECTORY / f"{benchmark}_{data_file}"
+
+    with open(script_file, "a") as results_file:
         json.dump(data, results_file)
         results_file.write("\n")
 

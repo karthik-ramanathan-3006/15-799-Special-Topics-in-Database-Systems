@@ -4,3 +4,5 @@ __pycache__
 
 # Ignore the VSCode stuff
 .vscode
+
+nohup.out

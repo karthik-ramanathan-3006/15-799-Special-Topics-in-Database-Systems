@@ -85,6 +85,21 @@ def task_update_log_collection():
     }
 
 
+def task_perform_vacuum():
+    """
+    Postgres: Performs vacuuming on the database system.
+    """
+    return {
+        "actions": [
+            *[
+                f'PGPASSWORD={DB_PASSWORD} {PSQL} --host=localhost --dbname={DEFAULT_DB} --username={DB_USERNAME} --command="VACUUM;"'
+            ],
+        ],
+        "params": [],
+        "verbosity": VERBOSITY_DEFAULT,
+    }
+
+
 def task_update_config():
     def update_xml(benchmark, scalefactor=1, time=60, rate=10, terminals=1):
         kwargs = locals().copy()

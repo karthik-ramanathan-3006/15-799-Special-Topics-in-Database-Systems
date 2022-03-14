@@ -139,6 +139,51 @@ def task_update_config():
     }
 
 
+def task_benchbase_workload_create():
+    """
+    Benchbase: initializes the specified benchmark.
+    """
+
+    def invoke_benchbase(benchmark, config, directory):
+        config = get_config_path(benchmark, config)
+        return f"echo {config}; java -jar benchbase.jar -b {benchmark} -c {config} -d {directory} --create=true --load=true"
+
+    return {
+        "actions": [
+            lambda: os.chdir(str(ARTIFACTS_PATH)),
+            # Invoke BenchBase.
+            CmdAction(invoke_benchbase),
+            # Reset working directory.
+            lambda: os.chdir(doit.get_initial_workdir()),
+        ],
+        "file_dep": [ARTIFACT_benchbase],
+        "uptodate": [False],
+        "verbosity": VERBOSITY_DEFAULT,
+        "params": [
+            {
+                "name": "benchmark",
+                "long": "benchmark",
+                "help": "The benchmark to run.",
+                "default": "epinions",
+            },
+            {
+                "name": "config",
+                "long": "config",
+                "help": (
+                    "The config file to use for BenchBase."
+                    "Defaults to the config in the artifacts folder for the selected benchmark."
+                ),
+                "default": None,
+            },
+            {
+                "name": "directory",
+                "long": "directory",
+                "default": f"{ARTIFACT_benchbase_results}",
+            },
+        ],
+    }
+
+
 def task_benchbase_run():
     """
     BenchBase: run a specific benchmark.
@@ -187,71 +232,4 @@ def task_benchbase_run():
                 "default": "--create=false --load=false --execute=false",
             },
         ],
-    }
-
-
-def task_create_index():
-    """
-    Creates a single index on the given table.
-    """
-
-    def invoke_create_index(table, columns):
-        column_list_str = ", ".join(columns)
-        index_name: str = get_index_name(table, columns)
-
-        sql = f"CREATE INDEX IF NOT EXISTS {index_name} ON {table} ({column_list_str});"
-        return f'PGPASSWORD={DB_PASSWORD} {PSQL} --host=localhost --dbname={DEFAULT_DB} --username={DB_USERNAME} --command="{sql}"'
-
-    return {
-        "actions": [
-            CmdAction(invoke_create_index),
-        ],
-        "params": [
-            {
-                "name": "table",
-                "long": "table",
-                "default": "",
-            },
-            {
-                "name": "columns",
-                "long": "columns",
-                "short": "c",
-                "type": list,
-                "default": [],
-            },
-        ],
-        "verbosity": VERBOSITY_DEFAULT,
-    }
-
-
-def task_drop_index():
-    """
-    Deletes a single index on the given table.
-    """
-
-    def invoke_drop_index(table, columns):
-        index_name: str = get_index_name(table, columns)
-
-        sql = f"DROP INDEX IF EXISTS {index_name};"
-        return f'PGPASSWORD={DB_PASSWORD} {PSQL} --host=localhost --dbname={DEFAULT_DB} --username={DB_USERNAME} --command="{sql}"'
-
-    return {
-        "actions": [
-            CmdAction(invoke_drop_index),
-        ],
-        "params": [
-            {
-                "name": "table",
-                "long": "table",
-                "default": "",
-            },
-            {
-                "name": "columns",
-                "long": "columns",
-                "short": "c",
-                "type": list,
-                "default": [],
-            },
-        ],
-        "verbosity": VERBOSITY_DEFAULT,
     }

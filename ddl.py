@@ -11,6 +11,13 @@ logger.setLevel(logging.DEBUG)
 
 
 @dataclass
+class Index:
+    name: str = None
+    table: str = None
+    columns: List[str] = field(default_factory=list)
+
+
+@dataclass
 class Table:
     name: str = None
     columns: List[str] = field(default_factory=list)
@@ -22,16 +29,18 @@ class DDL:
 
     @staticmethod
     def from_sql_statements(statements: List[str]):
-        tables: Mapping[Table] = {}
+        tables: Mapping[str, Table] = {}
+
         for stmt in statements:
             parsed_stmt = sql_metadata.Parser(stmt)
+            table_name = None
             try:
 
                 if parsed_stmt.query_type == sql_metadata.QueryType.CREATE:
                     # Since we're creating a table, there's got to be only 1 table.
-                    tables[parsed_stmt.tables[0]] = Table(
-                        parsed_stmt.tables[0], parsed_stmt.columns
-                    )
+                    table_name = parsed_stmt.tables[0]
+                    tables[table_name] = Table(table_name, parsed_stmt.columns)
+                    logger.info(f"Successfully processed DDL for table {table_name}.")
                     continue
 
                 # We know that DROP TABLE doesn't get processed.

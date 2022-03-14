@@ -1,3 +1,6 @@
 # Ignore the Doit related stuff
 __pycache__
 .doit.db
+
+# Ignore the VSCode stuff
+.vscode

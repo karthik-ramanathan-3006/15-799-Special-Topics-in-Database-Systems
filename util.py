@@ -9,6 +9,16 @@ logger = logging.getLogger("util")
 logger.setLevel(logging.DEBUG)
 
 
+def get_logger(name: str):
+    """
+    Fetches a logger with the requested configuration
+    """
+    logging.basicConfig()
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    return logger
+
+
 def get_ddl_for_benchmark(benchmark: str) -> DDL:
     """
     Fetches the DDL for the given benchmark.
@@ -78,3 +88,10 @@ def get_index_from_name(benchmark: str, index_name: str) -> Index:
         i += 1
 
     return Index(index_name, table_name, columns)
+
+
+def row_as_str(row_array):
+    """
+    Converts the given row array into a string.
+    """
+    return ", ".join(row_array)

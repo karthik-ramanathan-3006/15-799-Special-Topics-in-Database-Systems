@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Mapping
 
 import logging
@@ -10,11 +11,18 @@ logger = logging.getLogger("DDL")
 logger.setLevel(logging.DEBUG)
 
 
+class IndexType:
+    BTREE: str = "btree"
+    BRIN: str = "brin"
+    HASH: str = "hash"
+
+
 @dataclass
 class Index:
     name: str = None
     table: str = None
     columns: List[str] = field(default_factory=list)
+    itype: IndexType = IndexType.BTREE
 
 
 @dataclass
@@ -26,6 +34,7 @@ class Table:
 @dataclass
 class DDL:
     tables: Mapping[str, Table]
+    name: str = None
 
     @staticmethod
     def from_sql_statements(statements: List[str]):
@@ -56,7 +65,7 @@ class DDL:
         return DDL(tables)
 
     @staticmethod
-    def from_file(filename):
+    def from_file(filename: Path):
         # 1. Read the file into memory
         with open(filename, "r") as file:
             text = file.read()
@@ -67,7 +76,11 @@ class DDL:
         # 3. Split text into SQL statements
         statements = sqlparse.split(text)
 
-        return DDL.from_sql_statements(statements)
+        ddl = DDL.from_sql_statements(statements)
+        # Quick hack to name the DDL
+        benchmark = str(filename)[: -len(".sql")]
+        ddl.name = benchmark
+        return ddl
 
     def has_table(self, table: str) -> bool:
         return table in self.tables.keys()
@@ -86,7 +99,7 @@ class DDL:
                 # We're all good here
                 return column
 
-            logger.error(f"Failed to reolve column {column}")
+            # logger.error(f"Failed to reolve column {column}")
             return None
 
         # There is exactly one part, ie. the column name
@@ -100,10 +113,13 @@ class DDL:
         matched_tables = []
         for table in possible_tables:
             # We're assuming that the name of the table is correct.
-            assert table in self.tables.keys()
+            if table not in self.tables.keys():
+                # Return silently, instead of erroring out.
+                # logger.error(f"Table {table} not in DDL {self.name}")
+                return None
 
             if column in self.tables[table].columns:
-                logger.debug(f"Found a match for column {column} in {table}")
+                # logger.debug(f"Found a match for column {column} in {table}")
                 matched_tables.append(table)
 
         # Now, there should be exactly one match

@@ -2,14 +2,13 @@ from dataclasses import dataclass
 
 from constants import DB_PASSWORD, DB_USERNAME, DEFAULT_DB
 
-import logging
 import psycopg2
 
 from psycopg2._psycopg import connection, cursor
 
-logging.basicConfig()
-logger = logging.getLogger("Postgres")
-logger.setLevel(logging.DEBUG)
+from util import get_logger
+
+logger = get_logger("postgres")
 
 
 @dataclass
@@ -30,7 +29,12 @@ class Postgres:
 
     def execute(self, sql):
         self.cur.execute(sql)
-        return self.cursor.fetchall()
+
+        if self.cur.description:
+            return self.cur.fetchall()
+
+    def commit(self):
+        self.db_conn.commit()
 
     def disconnect(self):
         self.cur.close()

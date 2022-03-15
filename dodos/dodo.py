@@ -47,10 +47,6 @@ def get_config_path(benchmark, config=None) -> str:
     return str(config)
 
 
-def get_index_name(table: str, columns: List[str]) -> str:
-    return f"{table}_" + "_".join(columns)
-
-
 def task_update_log_collection():
     sql_list = [
         "ALTER SYSTEM SET log_destination='csvlog'",

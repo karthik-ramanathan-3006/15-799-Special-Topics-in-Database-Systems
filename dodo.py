@@ -182,3 +182,62 @@ def task_drop_index():
         ],
         "verbosity": VERBOSITY_DEFAULT,
     }
+
+
+def task_project1_setup():
+    """
+    Sets up the environment for Project 1.
+    """
+
+    def invoke_create_extension_hypopg(psql):
+        sql = f"CREATE EXTENSION IF NOT EXISTS hypopg;"
+        return f'PGPASSWORD={DB_PASSWORD} psql --host=localhost --dbname={DEFAULT_DB} --username={DB_USERNAME} --command="{sql}"'
+
+    return {
+        "actions": [
+            # I think it is fair to assume that the project/grader will be run on an Ubuntu machine
+            "sudo apt-get install -y postgresql-14-hypopg",
+            "sudo -E python3 -m pip install -r requirements.txt",
+            CmdAction(invoke_create_extension_hypopg),
+            # TODO: Install PG-Replay
+        ],
+        "params": [
+            {
+                "name": "psql",
+                "long": "psql",
+                "help": "The PostgreSQL workload to optimize for.",
+                "default": PSQL,
+            }
+        ],
+        "verbosity": VERBOSITY_DEFAULT,
+    }
+
+
+def task_project1():
+    """
+    Runner for Project 1.
+    """
+    return {
+        "actions": [
+            # TODO: We might want to start by dropping all existing indexes.
+            'echo "Faking action generation."',
+            'echo "SELECT 1;" > actions.sql',
+            'echo "SELECT 2;" >> actions.sql',
+            "echo '{\"VACUUM\": true}' > config.json",
+        ],
+        "params": [
+            {
+                "name": "workload_csv",
+                "long": "workload_csv",
+                "help": "The PostgreSQL workload to optimize for.",
+                "default": None,
+            },
+            {
+                "name": "timeout",
+                "long": "timeout",
+                "help": "The time allowed for execution before this dodo task will be killed.",
+                "default": "10m",  # Let's pretend that this is 10m.
+            },
+        ],
+        "verbosity": VERBOSITY_DEFAULT,
+    }

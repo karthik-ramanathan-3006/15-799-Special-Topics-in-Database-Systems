@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from pprint import pprint
 from typing import List
-from constants import MACHINE, RESULTS_DIRECTORY
+from constants import BENCHMARKS, EPINIONS, INDEXJUNGLE, MACHINE, RESULTS_DIRECTORY, TIMESERIES
 from ddl import Index
 
 logging.basicConfig()
@@ -88,6 +88,49 @@ def parse_results(run: BenchbaseRun) -> dict:
     writeout_results(data)
 
 
-# def main():
-#     run = BenchbaseRun("timeseries", [Index("sources_created_time", "sources", ["created_time"])], "/home/kramana2/postgresql/data/37a261eb-942f-4dea-b04c-4dd26284e5aa")
-#     parse_results(run)
+GPR_THRESHOLD = 0.65
+
+def parse_run_data(benchmark, directory=RESULTS_DIRECTORY) -> List[List[Index]]:
+    """
+    Parse the results of the runs on the NUC.
+    Returns a set of candidate indexes.
+    """
+    
+    file = RESULTS_DIRECTORY / f"{benchmark}_results.json"
+
+    
+    results = []
+    # Process it line by line.
+    with open(file, "r") as fp:
+        raw_line_data = None
+        for raw_line_data in fp:
+            line_data = json.loads(raw_line_data)
+            goodput = round(float(line_data["data"]["Goodput (requests/second)"]), 2)
+            rate = int(line_data["rate"])
+            indexes = line_data["indexes"]
+            
+            gp_per_rate = round((goodput / rate), 2)
+            
+            
+            results.append((goodput, rate, indexes, gp_per_rate))
+            # We've printed duplicated data. So advance the pointer
+            # by a line
+            fp.readline()
+    
+    results.sort(key=lambda x: x[-1], reverse=True)
+
+    # Filter out the best results; the number don't matter so much
+    best_results = []
+    for result in results:
+        if result[-1] < GPR_THRESHOLD:
+            break
+            
+        best_results.append(result)
+        
+        indexes = result[2]
+        index_names = [index["name"] for index in indexes]
+        logger.info(f"Goodput: {result[0]} \t Rate: {result[1]} \t Avg: {result[3]} \t Indexes: {index_names}")
+
+    # Return the candidate indexes
+    return [result[2] for result in best_results]
+

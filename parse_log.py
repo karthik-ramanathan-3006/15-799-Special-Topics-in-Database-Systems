@@ -3,6 +3,7 @@ Houses all the query parsing logic
 """
 
 import csv
+from typing import Mapping, Tuple
 import sql_metadata
 import sqlparse
 
@@ -94,7 +95,7 @@ def parse_sql_log(log_file: str):
 
     for key, value in query_frequency.items():
         query = sqlparse.format(key, strip_whitespace=True)
-        logger.info(f"Freq: {value}, query: {query}")
+        # logger.info(f"Freq: {value}, query: {query}")
 
     return query_frequency
 
@@ -103,6 +104,8 @@ def process_queries(ddl: DDL, query_frequency):
     """ """
     table_access_frequency = {}
     column_access_frequency = {}
+    # Mpas a tuple of columns to the
+    query_template_frequency: Mapping[Tuple[str], int] = {}
 
     # Things to account for:
     # 1. Query type: SELECT vs UPDATE vs INSERT
@@ -121,6 +124,7 @@ def process_queries(ddl: DDL, query_frequency):
         if not WHERE_CLAUSE in parsed_query.columns_dict:
             continue
 
+        columns_accessed = []
         for column in parsed_query.columns_dict[WHERE_CLAUSE]:
 
             qfied_column = ddl.get_qualified_column(parsed_query.tables, column)
@@ -134,9 +138,19 @@ def process_queries(ddl: DDL, query_frequency):
                 column_access_frequency.get(qfied_column, 0) + query_frequency[query]
             )
 
+            columns_accessed.append(qfied_column)
+        
+        if columns_accessed:
+            columns_accessed = tuple(columns_accessed)
+            query_template_frequency[columns_accessed] = query_template_frequency.get(columns_accessed, 0) + query_frequency[query]
+
     # Print a summary, if column access frequency has been populated.
     if column_access_frequency:
         for key, value in column_access_frequency.items():
             logger.info(f"Freq: {value}, column: {key}")
+    
+    if query_template_frequency:
+        for key, value in query_template_frequency.items():
+            logger.info(f"Freq: {value}, ordered columns: {key}")
 
     return column_access_frequency

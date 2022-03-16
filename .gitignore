@@ -6,3 +6,6 @@ __pycache__
 .vscode
 
 nohup.out
+
+# One for actions.sql
+actions.sql

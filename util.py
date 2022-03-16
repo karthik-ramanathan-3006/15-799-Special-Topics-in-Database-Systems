@@ -1,5 +1,5 @@
 from typing import List
-from constants import DDL_DIRECTORY, EPINIONS
+from constants import DDL_DIRECTORY, EPINIONS, TEMP_CSV
 from ddl import DDL, Index
 import logging
 
@@ -90,8 +90,22 @@ def get_index_from_name(benchmark: str, index_name: str) -> Index:
     return Index(index_name, table_name, columns)
 
 
-def row_as_str(row_array):
+def row_as_str(row_array: List) -> str:
     """
     Converts the given row array into a string.
     """
     return ", ".join(row_array)
+
+
+def print_indexes(index_list: List[Index]) -> str:
+    """
+    A handy function to stringify the given index.
+    """
+    return str([index.name for index in index_list])
+
+def combine_csvs(files: str):
+    with open(TEMP_CSV, "w") as out_file:
+        for file in files:
+            with open(str(file), "r") as in_file:
+                out_file.write(in_file.read())
+

@@ -28,6 +28,8 @@ TLD = Path(__file__).parent
 DDL_DIRECTORY = TLD / "ddls/"
 RESULTS_DIRECTORY = TLD / "benchbase_data/"
 SCRIPTS_DIRECTORY = TLD / "scripts/"
+TEMP_CSV = TLD / "temp.csv"
+ACTIONS_SQL = TLD / "actions.sql"
 
 
 KEY_TABLE_INDEXES = "table_indexes"

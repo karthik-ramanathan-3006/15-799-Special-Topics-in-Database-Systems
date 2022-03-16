@@ -196,8 +196,16 @@ def task_project1_setup():
     return {
         "actions": [
             # I think it is fair to assume that the project/grader will be run on an Ubuntu machine
+            "sudo apt install python3-dev libpq-dev",
             "sudo apt-get install -y postgresql-14-hypopg",
             "sudo -E python3 -m pip install -r requirements.txt",
+
+            # The grader script does not create the database, and so HypoPG installation fails.
+            # Not ideal, but create the DB.
+            f"PGPASSWORD={DB_PASSWORD} dropdb --host=localhost --username={DB_USERNAME} --if-exists {DEFAULT_DB}",
+            f"PGPASSWORD={DB_PASSWORD} createdb --host=localhost --username={DB_USERNAME} {DEFAULT_DB}",
+            "until pg_isready ; do sleep 1 ; done",
+
             CmdAction(invoke_create_extension_hypopg),
             # TODO: Install PG-Replay
         ],

@@ -103,9 +103,9 @@ def print_indexes(index_list: List[Index]) -> str:
     """
     return str([index.name for index in index_list])
 
+
 def combine_csvs(files: str):
     with open(TEMP_CSV, "w") as out_file:
         for file in files:
             with open(str(file), "r") as in_file:
                 out_file.write(in_file.read())
-

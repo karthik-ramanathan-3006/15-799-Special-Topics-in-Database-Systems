@@ -5,6 +5,7 @@ from constants import VERBOSITY_DEFAULT, DEFAULT_DB, DB_USERNAME, DB_PASSWORD
 from dodos.dodo import POSTGRES_PATH, POSTGRES_DATA_PATH
 from doit.action import CmdAction
 from plumbum import local
+from explain import index_runner
 
 from results import BenchbaseRun, parse_results
 from util import construct_index_name, get_index_from_name
@@ -199,13 +200,11 @@ def task_project1_setup():
             "sudo apt install python3-dev libpq-dev",
             "sudo apt-get install -y postgresql-14-hypopg",
             "sudo -E python3 -m pip install -r requirements.txt",
-
             # The grader script does not create the database, and so HypoPG installation fails.
             # Not ideal, but create the DB.
             f"PGPASSWORD={DB_PASSWORD} dropdb --host=localhost --username={DB_USERNAME} --if-exists {DEFAULT_DB}",
             f"PGPASSWORD={DB_PASSWORD} createdb --host=localhost --username={DB_USERNAME} {DEFAULT_DB}",
             "until pg_isready ; do sleep 1 ; done",
-
             CmdAction(invoke_create_extension_hypopg),
             # TODO: Install PG-Replay
         ],
@@ -225,13 +224,17 @@ def task_project1():
     """
     Runner for Project 1.
     """
+
+    def invoke_project_runner(workload_csv, timeout):
+        index_runner(workload_csv)
+        return "echo 'Run successful"
+
     return {
         "actions": [
             # TODO: We might want to start by dropping all existing indexes.
-            'echo "Faking action generation."',
-            'echo "SELECT 1;" > actions.sql',
-            'echo "SELECT 2;" >> actions.sql',
-            "echo '{\"VACUUM\": true}' > config.json",
+            'echo "Running action generation."',
+            CmdAction(invoke_project_runner),
+            # "echo '{\"VACUUM\": true}' > config.json",
         ],
         "params": [
             {

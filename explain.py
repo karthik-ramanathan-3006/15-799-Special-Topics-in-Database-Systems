@@ -38,7 +38,9 @@ def create_hypopg_index(postgres: Postgres, index: Index):
     """
     Creates a HypoPG index.
     """
-    hypopg_query = f"SELECT * FROM hypopg_create_index('{_get_create_index_command(index)}')"
+    hypopg_query = (
+        f"SELECT * FROM hypopg_create_index('{_get_create_index_command(index)}')"
+    )
 
     # TODO: Add some error handling here.
     postgres.execute(hypopg_query)
@@ -51,7 +53,7 @@ def drop_hypopg_index(postgres: Postgres, index: Index):
     Drops a HypoPG index.
     """
     # We must first fetch the index OID
-    # Names of HypoPG indexes are width constrained. Hack past that 
+    # Names of HypoPG indexes are width constrained. Hack past that
     select_sql = f"SELECT indexrelid, index_name FROM hypopg_list_indexes WHERE index_name LIKE '%{index.name[:48]}%';"
     results = postgres.execute(select_sql)
 
@@ -150,9 +152,11 @@ def identify_workload(workload_csv: str) -> Tuple[List[str], Mapping[str, int]]:
     return (identified_workloads, query_frequency)
 
 
-def get_hypopg_workload_cost_with_indexes(postgres: Postgres, indexes: List[Index], query_freq: Mapping[str, int]) ->float:
+def get_hypopg_workload_cost_with_indexes(
+    postgres: Postgres, indexes: List[Index], query_freq: Mapping[str, int]
+) -> float:
     """
-    Computes the EXPLAIN costs of running the workload against the set of candidate indexes. 
+    Computes the EXPLAIN costs of running the workload against the set of candidate indexes.
     """
     # 1. Let's drop all indexes.
     drop_all_indexes(postgres)
@@ -161,26 +165,25 @@ def get_hypopg_workload_cost_with_indexes(postgres: Postgres, indexes: List[Inde
     for index in indexes:
         create_hypopg_index(postgres, index)
     postgres.commit()
-    
 
     # 3. Run vacuuming as a precautionary step.
     # run_vacuum(postgres)
 
-    cost = 0 
+    cost = 0
     for query in query_freq:
         cost += (explain_query_with_costs(postgres, query)) * query_freq[query]
-    
+
     logger.info(f"Total cost: {cost}")
-    
+
     # 4. Finally, drop all indexes.
     for index in indexes:
         drop_hypopg_index(postgres, index)
-    
+
     return round(cost, 2)
 
 
 def expand_candidate_indexes(indexes: List[List[Index]]):
-    # We know the frequency with which each column is accessed. 
+    # We know the frequency with which each column is accessed.
     # 1. Expand the columns explored.
 
     # 2. Expand the number of columns per index.
@@ -217,18 +220,17 @@ def index_runner(workload_csv: str, action_sql: str = ACTIONS_SQL):
         cost = get_hypopg_workload_cost_with_indexes(db, indexes, query_frequency)
 
         costs.append((indexes, cost))
-    
-    costs.sort(key=lambda x: x[-1], reverse=False) 
-    costs = costs[:5] # Best 5 candidates
-    
+
+    costs.sort(key=lambda x: x[-1], reverse=False)
+    costs = costs[:5]  # Best 5 candidates
+
     logger.info("BEST INDEXES!!")
     for cost in costs:
         logger.info(f"Cost: {cost[1]} \t Index: {print_indexes(cost[0])}")
-    
+
     logger.info("NO INDEX!!")
     cost = get_hypopg_workload_cost_with_indexes(db, [], query_frequency)
     logger.info(f"Cost: {cost} \t Index: {[]}")
-
 
     # Write out to the actions.SQL file
     with open(action_sql, "w") as sql_file:
@@ -238,7 +240,6 @@ def index_runner(workload_csv: str, action_sql: str = ACTIONS_SQL):
         sql_lines = []
         for index in best_indexes:
             sql_lines.append(_get_create_index_command(index) + "\n")
-
 
         # Finally, write out the SQL
         sql_file.writelines(sql_lines)
@@ -261,4 +262,5 @@ workload_csv = "/home/kramana2/postgresql/data/bd95fb52-da3c-49a0-823f-58c8b0424
 #     ]
 # )
 
-index_runner(str(TEMP_CSV))
+# index_runner(str(TEMP_CSV))
+# index_runner("epinions.csv")

@@ -84,6 +84,9 @@ def parse_sql_log(log_file: str):
             if query.strip() in EXCLUDE_COLLECTION:
                 continue
 
+            if not query.split():
+                continue
+
             if query.split()[0] not in ALLOWED_QUERY_TYPES:
                 continue
 
@@ -118,7 +121,11 @@ def process_queries(ddl: DDL, query_frequency):
     for query in query_frequency:
         parsed_query = sql_metadata.Parser(query)
 
-        if not parsed_query or not parsed_query.columns_dict:
+        try:
+            if not parsed_query or not parsed_query.columns_dict:
+                continue
+        except IndexError:
+            # SQL Metadata Parser errors out on rare occasions.
             continue
 
         if not WHERE_CLAUSE in parsed_query.columns_dict:
@@ -139,16 +146,19 @@ def process_queries(ddl: DDL, query_frequency):
             )
 
             columns_accessed.append(qfied_column)
-        
+
         if columns_accessed:
             columns_accessed = tuple(columns_accessed)
-            query_template_frequency[columns_accessed] = query_template_frequency.get(columns_accessed, 0) + query_frequency[query]
+            query_template_frequency[columns_accessed] = (
+                query_template_frequency.get(columns_accessed, 0)
+                + query_frequency[query]
+            )
 
     # Print a summary, if column access frequency has been populated.
     if column_access_frequency:
         for key, value in column_access_frequency.items():
             logger.info(f"Freq: {value}, column: {key}")
-    
+
     if query_template_frequency:
         for key, value in query_template_frequency.items():
             logger.info(f"Freq: {value}, ordered columns: {key}")

@@ -1,9 +1,10 @@
 from pathlib import Path
 import logging
+import sys
 import uuid
 from constants import VERBOSITY_DEFAULT, DEFAULT_DB, DB_USERNAME, DB_PASSWORD
 from dodos.dodo import POSTGRES_PATH, POSTGRES_DATA_PATH
-from doit.action import CmdAction
+from doit.action import CmdAction, PythonAction
 from plumbum import local
 from explain import index_runner
 
@@ -202,9 +203,6 @@ def task_project1_setup():
             "sudo -E python3 -m pip install -r requirements.txt",
             # The grader script does not create the database, and so HypoPG installation fails.
             # Not ideal, but create the DB.
-            f"PGPASSWORD={DB_PASSWORD} dropdb --host=localhost --username={DB_USERNAME} --if-exists {DEFAULT_DB}",
-            f"PGPASSWORD={DB_PASSWORD} createdb --host=localhost --username={DB_USERNAME} {DEFAULT_DB}",
-            "until pg_isready ; do sleep 1 ; done",
             CmdAction(invoke_create_extension_hypopg),
             # TODO: Install PG-Replay
         ],
@@ -225,15 +223,11 @@ def task_project1():
     Runner for Project 1.
     """
 
-    def invoke_project_runner(workload_csv, timeout):
-        index_runner(workload_csv)
-        return "echo 'Run successful"
-
     return {
         "actions": [
             # TODO: We might want to start by dropping all existing indexes.
             'echo "Running action generation."',
-            CmdAction(invoke_project_runner),
+            PythonAction(index_runner),
             # "echo '{\"VACUUM\": true}' > config.json",
         ],
         "params": [

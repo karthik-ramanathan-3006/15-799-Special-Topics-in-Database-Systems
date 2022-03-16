@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+import traceback
 from typing import List, Mapping, Tuple
 from unittest import result
 from constants import ACTIONS_SQL, BENCHMARKS, EPINIONS, RESULTS_DIRECTORY, TEMP_CSV
@@ -245,6 +246,8 @@ def index_runner(workload_csv: str, action_sql: str = ACTIONS_SQL):
         sql_file.writelines(sql_lines)
 
     db.disconnect()
+
+    return
 
 
 # Epinions

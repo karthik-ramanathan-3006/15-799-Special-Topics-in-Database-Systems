@@ -119,6 +119,8 @@ def process_queries(ddl: DDL, query_frequency):
     # 5. JOIN clauses (a.colA v b.colA)
     # 6. Clean out values from WHERE clauses
 
+    misses = 0
+    MAX_MISSES = 100
     for query in query_frequency:
         parsed_query = sql_metadata.Parser(query)
 
@@ -145,6 +147,14 @@ def process_queries(ddl: DDL, query_frequency):
             if not qfied_column:
                 # This means that the column is not a part of the given DDL.
                 # Silently error out and move on.
+                misses += 1
+                if misses == 100:
+                    # Exit pre-emptively
+                    return {
+                        "column_access": column_access_frequency,
+                        "column_importance": column_importance_frequency,
+                        "query_templates": query_template_frequency,
+                    }
                 continue
 
             column_access_frequency[qfied_column] = (

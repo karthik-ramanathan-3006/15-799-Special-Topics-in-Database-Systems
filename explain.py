@@ -1,5 +1,6 @@
 import itertools
 import json
+import os
 from pathlib import Path
 import re
 import traceback
@@ -433,8 +434,44 @@ def persist_candidate_indexes(
         fp.writelines(lines)
 
 
+def get_exploration_state(state_file: Path = STATE_CANDIDATES) -> List[List[Index]]:
+    if not state_file.exists():
+        return []
+
+    # File exists, read line by line
+    candidate_indexes = []
+    with open(state_file, "r") as fp:
+        for line in fp:
+            json_data = json.loads(line)
+            index_list = []
+            for index in json_data:
+                index_list.append(Index(**index))
+            candidate_indexes.append(index_list)
+
+    candidate_indexes.reverse()
+    return candidate_indexes
+
+
 def remove_candidate_tail(state_file: Path = STATE_CANDIDATES):
-    pass
+    """
+    The candidates file is used to maintain state across iterations.
+    This function updates the file after each candidate is tested.
+    """
+    num_lines_cmd = f"sed -n '$=' {str(STATE_CANDIDATES)}"
+
+    if not STATE_CANDIDATES.exists():
+        # Nothing to do here, return.
+        return
+
+    num_lines = int(os.popen(num_lines_cmd).read().strip())
+    if num_lines == 1:
+        # Remove the file
+        os.remove(STATE_CANDIDATES)
+        return
+
+    # Multiple lines left.
+    strip_last_line = f"sed -i '$ d' {str(STATE_CANDIDATES)}"
+    os.popen(strip_last_line)
 
 
 def index_runner(workload_csv: str, action_sql: str = ACTIONS_SQL):
@@ -459,20 +496,23 @@ def index_runner(workload_csv: str, action_sql: str = ACTIONS_SQL):
     # This must also be cataloged in the Actions SQL file to persist
     # through DB restores.
 
-    candidate_indexes = generate_candidate_indexes(
-        target_benchmark, workload["frequencies"]
-    )
+    candidate_indexes = get_exploration_state()
+    if candidate_indexes:
+        mid_run = True
+    if not mid_run:
+        candidate_indexes = generate_candidate_indexes(
+            target_benchmark, workload["frequencies"]
+        )
 
     # Generate a set of candidate indexes.
     # Note each element is a set of indexes.
-    indexes_dict_list = parse_run_data(target_benchmark, RESULTS_DIRECTORY)
-    for index_list in indexes_dict_list:
-        candidate_indexes.append([Index(**index) for index in index_list])
+    if not mid_run:
+        indexes_dict_list = parse_run_data(target_benchmark, RESULTS_DIRECTORY)
+        for index_list in indexes_dict_list:
+            candidate_indexes.append([Index(**index) for index in index_list])
 
     persist_candidate_indexes(candidate_indexes)
     # TODO: Remove indexes that are repeating
-
-    # Expand the candidate indexes.
 
     # Run once, without any indexes.
     no_index_cost = get_hypopg_workload_cost_with_indexes(db, [], query_frequency)
@@ -493,6 +533,9 @@ def index_runner(workload_csv: str, action_sql: str = ACTIONS_SQL):
             best_cost = cost
             # Write this out, because you may get interrupted by the timer.
             write_out_indexes(best_indexes, best_cost, indexes_to_drop, action_sql)
+
+        # Finally, remove the candidate from the potential list of candidates
+        remove_candidate_tail()
 
     # This is for our own consumption.
     costs.sort(key=lambda x: x[-1], reverse=False)

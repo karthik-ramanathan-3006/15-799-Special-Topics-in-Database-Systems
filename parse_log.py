@@ -148,7 +148,7 @@ def process_queries(ddl: DDL, query_frequency):
                 # This means that the column is not a part of the given DDL.
                 # Silently error out and move on.
                 misses += 1
-                if misses == 100:
+                if misses == MAX_MISSES:
                     # Exit pre-emptively
                     return {
                         "column_access": column_access_frequency,

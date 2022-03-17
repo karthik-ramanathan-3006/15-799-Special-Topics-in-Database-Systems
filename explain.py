@@ -497,8 +497,8 @@ def index_runner(workload_csv: str, action_sql: str = ACTIONS_SQL):
     # through DB restores.
 
     candidate_indexes = get_exploration_state()
-    if candidate_indexes:
-        mid_run = True
+    mid_run = candidate_indexes is not None
+
     if not mid_run:
         candidate_indexes = generate_candidate_indexes(
             target_benchmark, workload["frequencies"]

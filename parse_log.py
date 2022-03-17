@@ -127,6 +127,11 @@ def process_queries(ddl: DDL, query_frequency):
                 continue
         except IndexError:
             # SQL Metadata Parser errors out on rare occasions.
+            logger.error("Index error on parsing query")
+            continue
+        except ValueError:
+            # Again, the SQL Parser seems to error out every now and then.
+            logger.error("Value error on parsing query")
             continue
 
         if not WHERE_CLAUSE in parsed_query.columns_dict:

@@ -109,6 +109,7 @@ def process_queries(ddl: DDL, query_frequency):
     column_access_frequency = {}
     # Mpas a tuple of columns to the
     query_template_frequency: Mapping[Tuple[str], int] = {}
+    column_importance_frequency = {}
 
     # Things to account for:
     # 1. Query type: SELECT vs UPDATE vs INSERT
@@ -162,5 +163,20 @@ def process_queries(ddl: DDL, query_frequency):
     if query_template_frequency:
         for key, value in query_template_frequency.items():
             logger.info(f"Freq: {value}, ordered columns: {key}")
+            for (i, column) in enumerate(key):
+                # Let's assume that the importance of columns
+                # follows exponential backoff
+                # This might not be true for OR clauses, but let's pretend that it is.
+                const = 1 / (2**i)
+                column_importance_frequency[column] = column_importance_frequency.get(
+                    column, 0
+                ) + round((const * value), 2)
 
-    return column_access_frequency
+        for key, value in column_importance_frequency.items():
+            logger.info(f"Freq: {value}, column: {key}")
+
+    return {
+        "column_access": column_access_frequency,
+        "column_importance": column_importance_frequency,
+        "query_templates": query_template_frequency,
+    }

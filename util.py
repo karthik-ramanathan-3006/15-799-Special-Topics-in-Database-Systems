@@ -109,3 +109,21 @@ def combine_csvs(files: str):
         for file in files:
             with open(str(file), "r") as in_file:
                 out_file.write(in_file.read())
+
+
+def index_to_dict(index: Index) -> dict:
+    """
+    A handy function to convert index to dictionary for persistence.
+    """
+    return {
+        "name": index.name,
+        "table": index.table,
+        "columns": index.columns,
+    }
+
+
+def index_list_to_dict_list(indexes: List[Index]) -> List[dict]:
+    """
+    A handy function to convert an index list to dict list for persistence.
+    """
+    return [index_to_dict(index) for index in indexes]

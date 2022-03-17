@@ -30,6 +30,9 @@ RESULTS_DIRECTORY = TLD / "benchbase_data/"
 SCRIPTS_DIRECTORY = TLD / "scripts/"
 TEMP_CSV = TLD / "temp.csv"
 ACTIONS_SQL = TLD / "actions.sql"
+STATE_DIRECTORY = TLD / "state/"
+STATE_JSON = STATE_DIRECTORY / "state.json"
+STATE_CANDIDATES = STATE_DIRECTORY / "candidates.txt"
 
 
 KEY_TABLE_INDEXES = "table_indexes"

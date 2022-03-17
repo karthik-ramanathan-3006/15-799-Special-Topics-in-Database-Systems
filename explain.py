@@ -93,7 +93,7 @@ def _get_drop_index_command(index_name: str) -> str:
     """
     Returns the command for dropping an index.
     """
-    return f"DROP INDEX IF EXISTS {index_name}"
+    return f"DROP INDEX IF EXISTS {index_name};"
 
 
 def drop_index(postgres: Postgres, index_name: str):
@@ -368,9 +368,7 @@ def generate_candidate_indexes(benchmark, workload_data):
     multi_candidate_avg_indexes_list = multi_candidate_avg_indexes_list[:N_MULTI_COMBOS]
 
     multi_candidate_indexes = [x[0] for x in multi_candidate_indexes_list]
-    multi_candidate_indexes.extend(
-        [x[0] for x in multi_candidate_avg_indexes_list]
-    )
+    multi_candidate_indexes.extend([x[0] for x in multi_candidate_avg_indexes_list])
 
     for index_list in multi_candidate_indexes:
         logger.info(f"Multi column indexes: {print_indexes(index_list)}")
@@ -415,9 +413,9 @@ def write_out_indexes(
                 create_lines.append(_get_create_index_command(index) + "\n")
 
             # Get the SQL Commands for indexes to drop.
-            drop_sql_lines = [
-                _get_drop_index_command(index) for index in indexes_to_drop
-            ]
+            drop_sql_lines = []
+            for index in indexes_to_drop:
+                drop_sql_lines.append(_get_drop_index_command(index) + "\n")
 
             # Finally, write out the SQL
             sql_lines.extend(drop_sql_lines)
@@ -590,4 +588,6 @@ workload_csv = "/home/kramana2/postgresql/data/bd95fb52-da3c-49a0-823f-58c8b0424
 # index_runner(str(TEMP_CSV))
 # index_runner("epinions.csv")
 
-index_runner("/home/kramana2/postgresql/data/f240c871-e280-4aea-8b16-b69d09dcea30/postgresql-2022-03-14_090732.csv")
+index_runner(
+    "/home/kramana2/postgresql/data/f240c871-e280-4aea-8b16-b69d09dcea30/postgresql-2022-03-14_090732.csv"
+)

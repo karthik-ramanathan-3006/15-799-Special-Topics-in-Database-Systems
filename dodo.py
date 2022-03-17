@@ -228,7 +228,7 @@ def task_project1():
             # TODO: We might want to start by dropping all existing indexes.
             'echo "Running action generation."',
             PythonAction(index_runner),
-            # "echo '{\"VACUUM\": true}' > config.json",
+            "echo '{\"VACUUM\": true}' > config.json",
         ],
         "params": [
             {

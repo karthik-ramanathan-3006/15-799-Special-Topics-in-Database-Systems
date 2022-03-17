@@ -343,22 +343,34 @@ def generate_candidate_indexes(benchmark, workload_data):
 
     # Next, rank the multicolumn indexes by importance
     multi_candidate_indexes_list = []
+    multi_candidate_avg_indexes_list = []
     for index_list in multi_candidate_indexes:
         imp = 0
+        num_cols = 0
         for index in index_list:
             for col in index.columns:
                 imp += column_importance[f"{index.table}.{col}"]
+                num_cols += 1
+
+        avg_imp = round((imp / num_cols), 2)
         logger.info(
-            f"Importance: {imp} \t Multi column indexes: {print_indexes(index_list)}"
+            f"Importance: {imp} \t Average imp: {avg_imp}  Multi column indexes: {print_indexes(index_list)}"
         )
         multi_candidate_indexes_list.append((index_list, imp))
+        multi_candidate_avg_indexes_list.append((index_list, avg_imp))
 
     # Now, sort by importance
     multi_candidate_indexes_list.sort(key=lambda x: x[1], reverse=True)
+    multi_candidate_avg_indexes_list.sort(key=lambda x: x[1], reverse=True)
+
     N_MULTI_COMBOS = min(len(multi_candidate_indexes_list), N_MULTI_COMBOS)
     multi_candidate_indexes_list = multi_candidate_indexes_list[:N_MULTI_COMBOS]
+    multi_candidate_avg_indexes_list = multi_candidate_avg_indexes_list[:N_MULTI_COMBOS]
 
     multi_candidate_indexes = [x[0] for x in multi_candidate_indexes_list]
+    multi_candidate_avg_indexes_list.extend(
+        [x[0] for x in multi_candidate_avg_indexes_list]
+    )
 
     for index_list in multi_candidate_indexes:
         logger.info(f"Multi column indexes: {print_indexes(index_list)}")
@@ -497,7 +509,11 @@ def index_runner(workload_csv: str, action_sql: str = ACTIONS_SQL):
     # through DB restores.
 
     candidate_indexes = get_exploration_state()
-    mid_run = candidate_indexes is not None
+    mid_run = None
+    if candidate_indexes:
+        mid_run = True
+    else:
+        mid_run = False
 
     if not mid_run:
         candidate_indexes = generate_candidate_indexes(

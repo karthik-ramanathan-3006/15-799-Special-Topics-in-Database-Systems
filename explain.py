@@ -588,6 +588,3 @@ workload_csv = "/home/kramana2/postgresql/data/bd95fb52-da3c-49a0-823f-58c8b0424
 # index_runner(str(TEMP_CSV))
 # index_runner("epinions.csv")
 
-index_runner(
-    "/home/kramana2/postgresql/data/f240c871-e280-4aea-8b16-b69d09dcea30/postgresql-2022-03-14_090732.csv"
-)
